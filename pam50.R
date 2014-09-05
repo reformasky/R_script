@@ -1,6 +1,5 @@
 #library used to calculate adjusted Rand index
 library(phyclust, quiet = TRUE)
-library(gridBase)
 
 setwd("D:/thesis")
 source("./R_script/util.R")
@@ -8,14 +7,12 @@ set.seed(1024)
 savePath = "./plots/pam50"
 #read file
 sourceData = read.csv("./pam50_label_orginal.xls", sep = "\t", header=TRUE);
-
 #process header information(for labeling)
 headerInfo = colnames(sourceData);
 headerInfo = unlist(lapply(headerInfo, processHeader));
 
 sourceData = sourceData[,headerInfo > 0 ];
 sourceData = as.matrix(sourceData);
-
 benchmark = headerInfo[headerInfo > 0  ];
 
 #parameters for hclust;
@@ -26,9 +23,7 @@ clusterLabels = c("wa","si","co","av","mc",",me","ce")
 labels = replicate( length(clusterMethods), "")
 results = replicate( length(clusterMethods), 1)
 
-#zeroOneScaling
 for(s in 1 : length(scalingMethods)){
-	
 	for(d in 1 : length(distanceMethods)){
 		cat(paste(replicate(length(clusterMethods), "*"), collapse = ""))
 		print("")
@@ -43,7 +38,6 @@ for(s in 1 : length(scalingMethods)){
 			results[counter] = result;
 			counter = counter + 1;
 			cat(sprintf("-"))
-
 		}
 		print("")
 		fileName = paste(c(savePath, title), collapse = "/")
