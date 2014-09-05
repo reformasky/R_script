@@ -20,16 +20,19 @@ zeroOneScaling = function(vec) {
 zscoreScaling = function(vec) {
 	sdVec = sd(vec);
 	meanVec = mean(vec);
-	round((vec - meanVec) / sdVec);
+	(vec - meanVec) / sdVec;
 }
 
 
 evaluation = function(sData, numOfClusters, scalingMethod, distanceMethod, clusterMethod, benchMark) {
- 	groups = benchMark;
- 	sourceData = apply(sData, MARGIN = 1, match.fun(scalingMethod));
-	distances = dist(sourceData, method = distanceMethod);
-	fit = hclust(distances, method = clusterMethod);
-	groups = cutree(fit, k= numOfClusters);
-
+ 	groups = sample(length(benchMark), x = 1: numOfClusters, replace = TRUE);
+ 	tryCatch({
+ 		sourceData = apply(sData, MARGIN = 1, match.fun(scalingMethod));
+		distances = dist(sourceData, method = distanceMethod);
+		fit = hclust(distances, method = clusterMethod);
+		groups = cutree(fit, k= numOfClusters);
+ 	},
+ 	error = function(cond){})
+ 	
 	RRand(groups, benchMark);
 }

@@ -1,8 +1,11 @@
 #library used to calculate adjusted Rand index
 library(phyclust, quiet = TRUE)
+library(gridBase)
 
 setwd("D:/thesis")
 source("./R_script/util.R")
+set.seed(1024)
+savePath = "./plots/pam50"
 #read file
 sourceData = read.csv("./pam50_label_orginal.xls", sep = "\t", header=TRUE);
 
@@ -16,17 +19,38 @@ sourceData = as.matrix(sourceData);
 benchmark = headerInfo[headerInfo > 0  ];
 
 #parameters for hclust;
-scalingMethodsString = c("zeroOneScaling", "zscoreScaling");
+scalingMethods = c("zeroOneScaling", "zscoreScaling");
 distanceMethods = c( "euclidean", "maximum", "manhattan",  "binary", "minkowski","canberra");
 clusterMethods = c( "ward", "single", "complete", "average", "mcquitty", "median", "centroid");
+clusterLabels = c("wa","si","co","av","mc",",me","ce")
+labels = replicate( length(clusterMethods), "")
+results = replicate( length(clusterMethods), 1)
 
 #zeroOneScaling
-for(sMethod in scalingMethodsString){
-	for(dMethod in distanceMethods) {
-		for(cMethod in clusterMethods) {
-			result = paste(c(sMethod, dMethod, cMethod), collapse = "_")
-			print(paste(c(result, 
-				evaluation(sourceData, 6, sMethod, dMethod, cMethod, benchmark)$Rand), collapse= ": "))
+for(s in 1 : length(scalingMethods)){
+	
+	for(d in 1 : length(distanceMethods)){
+		cat(paste(replicate(length(clusterMethods), "*"), collapse = ""))
+		print("")
+		title = paste(c(scalingMethods[s], distanceMethods[d]), collapse = "_")
+		counter = 1;
+		for(cl in 1 : length(clusterMethods)) {
+			label = clusterLabels[cl];
+			result = evaluation(sourceData, 6,
+			 	scalingMethods[s], distanceMethods[d],
+			 	clusterMethods[cl], benchmark)$Rand;
+			labels[counter] = label;
+			results[counter] = result;
+			counter = counter + 1;
+			cat(sprintf("-"))
+
 		}
+		print("")
+		fileName = paste(c(savePath, title), collapse = "/")
+		fileName = paste(c(fileName, "tiff"), collapse = ".")
+		tiff(fileName);
+		plot(factor(labels), results, main= title, xlab= "agglomeration methods", ylab = "Rand index", ylim= c(0.3,0.7))
+		dev.off();
 	}
+	
 }
