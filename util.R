@@ -11,7 +11,7 @@ processHeader = function(str) {
 	}
 }
 
-zeroOneScaling = function(vec) {
+zeroOneScaling = function(vec, fun) {
 	minVec = min(vec);
 	maxVec = max(vec);
 	(vec - minVec)/ (maxVec - minVec);
@@ -23,6 +23,24 @@ zscoreScaling = function(vec) {
 	(vec - meanVec) / sdVec;
 }
 
+discretizationFloor = function(vec, numOfStates = 5) {
+	vec = zeroOneScaling(vec);
+	floor(vec * numOfStates);
+} 
+
+# only support 5 states for now
+discretizationZscore = function(vec) {
+	upperBound = c(-2, -0.5, 0.5, 2);
+	vec = zscoreScaling(vec);
+	filter = function(var) {
+		for(i in 1 : length(upperBound)) {
+			if (var < upperBound[i])
+				return(i)
+		}
+		return(5)
+	}
+	unlist(lapply(vec, filter))
+}
 
 evaluation = function(sData, numOfClusters, scalingMethod, distanceMethod, clusterMethod, benchMark) {
  	groups = sample(length(benchMark), x = 1: numOfClusters, replace = TRUE);
@@ -32,7 +50,7 @@ evaluation = function(sData, numOfClusters, scalingMethod, distanceMethod, clust
 		fit = hclust(distances, method = clusterMethod);
 		groups = cutree(fit, k= numOfClusters);
  	},
- 	error = function(cond){})
+ 	error = function(cond){print("err")})
  	
 	RRand(groups, benchMark);
 }
