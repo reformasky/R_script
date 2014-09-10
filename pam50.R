@@ -4,47 +4,34 @@ library(phyclust, quiet = TRUE)
 setwd("D:/thesis")
 source("./R_script/util.R")
 set.seed(1024)
-savePath = "./plots/pam50_dis_withNA"
+
 #read file
-sourceData = read.csv("./pam50_label_orginal.xls", sep = "\t", header=TRUE);
+sData = read.csv("./pam50_label_orginal.xls", sep = "\t", header=TRUE);
 #process header information(for labeling)
-headerInfo = colnames(sourceData);
-headerInfo = unlist(lapply(headerInfo, processHeader));
+hInfo = colnames(sData);
+hInfo = unlist(lapply(hInfo, processHeader));
 
-sourceData = sourceData[,headerInfo > 0  ];
+# #test the performance of different scaling, distance and clustering functions 
+# sourceData = sData[,hInfo > 0];
+# sourceData = as.matrix(sourceData);
+# benchmark = hInfo[hInfo > 0];
+# savePath = "./plots/pam50/continuous_with_NA"
+# plotFunctions(sourceData, savePath);
+# #test the performance of different scaling, distance and clustering functions, exclude the NA group
+# sourceData = sData[,hInfo > 0 & hInfo < 6];
+# sourceData = as.matrix(sourceData);
+# benchmark = hInfo[hInfo > 0 & hInfo < 6];
+# savePath = "./plots/pam50/continuous_WO_NA"
+# plotFunctions(sourceData, savePath);
+
+sourceData = sData[,hInfo > 0];
 sourceData = as.matrix(sourceData);
-benchmark = headerInfo[headerInfo > 0   ];
+benchmark = hInfo[hInfo > 0];
+savePath = "./plots/pam50/discrete_with_NA"
+plotStates(sourceData, savePath, 6, benchmark);
 
-#parameters for hclust;
-scalingMethods = c("discretizationFloor", "discretizationZscore");
-distanceMethods = c( "euclidean", "maximum", "manhattan",  "binary", "minkowski","canberra");
-clusterMethods = c( "ward", "single", "complete", "average", "mcquitty", "median", "centroid");
-clusterLabels = c("wa","si","co","av","mc",",me","ce")
-labels = replicate( length(clusterMethods), "")
-results = replicate( length(clusterMethods), 1)
-
-for(s in 1 : length(scalingMethods)){
-	for(d in 1 : length(distanceMethods)){
-		cat(paste(replicate(length(clusterMethods), "*"), collapse = ""))
-		print("")
-		title = paste(c(scalingMethods[s], distanceMethods[d]), collapse = "_")
-		counter = 1;
-		for(cl in 1 : length(clusterMethods)) {
-			label = clusterLabels[cl];
-			result = evaluation(sourceData, 5,
-			 	scalingMethods[s], distanceMethods[d],
-			 	clusterMethods[cl], benchmark)$Rand;
-			labels[counter] = label;
-			results[counter] = result;
-			counter = counter + 1;
-			cat(sprintf("-"))
-		}
-		print("")
-		fileName = paste(c(savePath, title), collapse = "/")
-		fileName = paste(c(fileName, "tiff"), collapse = ".")
-		tiff(fileName);
-		plot(factor(labels), results, main= title, xlab= "agglomeration methods", ylab = "Rand index", ylim= c(0.2,0.8))
-		dev.off();
-	}
-	
-}
+sourceData = sData[,hInfo > 0 & hInfo < 6];
+sourceData = as.matrix(sourceData);
+benchmark = hInfo[hInfo > 0 & hInfo < 6];
+savePath = "./plots/pam50/discrete_WO_NA"
+plotStates(sourceData, savePath, 6, benchmark);
