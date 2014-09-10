@@ -42,6 +42,13 @@ discretizationZscore = function(vec) {
 	unlist(lapply(vec, filter))
 }
 
+
+discretizationEqual = function(vec, numOfStates = 5) {
+	step = ceiling(length(vec) / numOfStates);
+	ranks = rank(vec);
+	(ranks) %/% step
+}
+
 evaluation = function(sData, numOfClusters, scalingMethod, distanceMethod, clusterMethod, benchMark) {
  	groups = sample(length(benchMark), x = 1: numOfClusters, replace = TRUE);
  	tryCatch({
