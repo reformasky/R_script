@@ -24,14 +24,14 @@ hInfo = unlist(lapply(hInfo, processHeader));
 # savePath = "./plots/pam50/continuous_WO_NA"
 # plotFunctions(sourceData, savePath);
 
-sourceData = sData[,hInfo > 0];
-sourceData = as.matrix(sourceData);
-benchmark = hInfo[hInfo > 0];
-savePath = "./plots/pam50/discrete_with_NA"
-plotStates(sourceData, savePath, 6, benchmark);
+# sourceData = sData[,hInfo > 0];
+# sourceData = as.matrix(sourceData);
+# benchmark = hInfo[hInfo > 0];
+# savePath = "./plots/pam50/discrete_with_NA"
+# plotStates(sourceData, savePath, 6, benchmark);
 
-sourceData = sData[,hInfo > 0 & hInfo < 6];
+sourceData = sData[,hInfo > 0 & hInfo < 5];
 sourceData = as.matrix(sourceData);
-benchmark = hInfo[hInfo > 0 & hInfo < 6];
-savePath = "./plots/pam50/discrete_WO_NA"
-plotStates(sourceData, savePath, 6, benchmark);
+benchmark = hInfo[hInfo > 0 & hInfo < 5];
+savePath = "./plots/pam50/discrete_pairwise_cluster4_WO_NA_WO_NORMAL"
+similarities = pairWiseComparision(sourceData, savePath, numOfClusters = 4, benchMark = benchmark)
