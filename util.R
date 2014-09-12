@@ -1,26 +1,30 @@
 #extract the sample information from header file: for non-samples(i.e.,
-# GeneId, and other statistic results) return -1;
+# GeneId, and other statistic results) return -1; for pValues, return 0;
 processHeader = function(str) {
 	sampleTypes = c("Basal","Her2","LumA","LumB","Normal", "NA")
 	stringVec = unlist(strsplit(str, split = ".", fixed = TRUE));
 	if (length(stringVec) >= 2){
 		which(sampleTypes == stringVec[1])
 	}
-	else{
-		-1;
+	else if (str == "Pvalues"){
+		0;
+	}
+	else {
+		-1
 	}
 }
 
 
+#normalize a vec basing on zScore; remember, when used in apply, if MARGIN == 1, will resulted a transposed matrix
 normalizationZScore = function(vec) {
 	sdVec = sd(vec);
 	meanVec = mean(vec);
 	(vec - meanVec) / sdVec;
 }
 
-#discretize a vec into numOfStates
+#discretize a vec into numOfStates, wach state with equal probility
 discretizationZScore = function(vec, numOfStates = 3) {
-	floor( pnorm(normalizationZScore(vec)) * numOfStates);
+	floor( pnorm(normalizationZScore(vec)) * numOfStates );
 }
 
 #calculate the hamming distance between ROWs of matrix.
@@ -39,7 +43,12 @@ hammingMatrix = function(mtx) {
 	as.dist(result)
 }
 
-pairWiseComparision = function(sData, savePath, numOfClusters, benchMark = c(),states = 3 : 10) {
+# evaluate the effect of discretization on hclust, compares the clustering before and after discretization;
+# if the true label is supplied, also compares the clustering of true label and after discretization;
+# use two distance functions, euclidian and hamming distance.
+pairWiseComparision = function(sData, savePath, numOfClusters, benchMark = c(),states = 3 : 10, 
+	titleName = "pairwise comparion_zscore discretization", lx = 3, ly = 0.2, printTable = FALSE ) {
+
 	sourceData = apply(sData, MARGIN = 1, normalizationZScore);
 	distances = dist(sourceData)
 	fit = hclust(distances)
@@ -65,33 +74,6 @@ pairWiseComparision = function(sData, savePath, numOfClusters, benchMark = c(),s
 		data.frame(euclideanGroups, hammingGroups);
 	}
 
-	euclideanCluster = function(sData, numOfStates) {
- 		groups = sample(length(bMark), x = 1: numOfClusters, replace = TRUE);
- 		tryCatch({
- 			sourceData = apply(sData, MARGIN = 1, discretizationZScore, numOfStates);
-			distances = dist(sourceData);
-			fit = hclust(distances, method = "ward");
-			groups = cutree(fit, k= numOfClusters);
- 		},
- 		error = function(cond){print("err")})
- 		
-		groups;
-	}
-
-	hammingCluster = function(sData, numOfStates) {
-		groups = sample(length(bMark), x = 1 : numOfClusters, replace = TRUE);
-		tryCatch({
-				sourceData = apply(sData, MARGIN = 1, discretizationZScore, numOfStates);
-				distances = hammingMatrix(sourceData);
-				fit = hclust(distances, method = "ward");
-				groups = cutree(fit, k = numOfClusters);
-			},
-			error = function(cond){print("err")})
-		groups;
-
-	}
-
-
 	euclideanPairWise = replicate(length(states), 0);
 	hammingPairWise  = replicate(length(states), 0);
 	euclideanPam50 = replicate(length(states), 0);
@@ -99,8 +81,6 @@ pairWiseComparision = function(sData, savePath, numOfClusters, benchMark = c(),s
 	cat(paste(replicate(length(states), "*"), collapse = ""))
 	print("")
 	for(i in 1 : length(states)) {
-		# euclideanGroups = euclideanCluster(sData, states[i])
-		# euclideanPairWise[i] = RRand(bMark, euclideanGroups)$adjRand;
 		euclideanGroups = cluster(sData, states[i])$euclideanGroups;
 		euclideanPairWise[i] = RRand(bMark, euclideanGroups)$adjRand;
 		hammingGroups = cluster(sData, states[i])$hammingGroups;
@@ -109,44 +89,35 @@ pairWiseComparision = function(sData, savePath, numOfClusters, benchMark = c(),s
 			euclideanPam50[i] = RRand(benchMark, euclideanGroups)$adjRand;
 			hammingPam50[i] = RRand(benchMark, hammingGroups)$adjRand;
 		}
-		# tiff(paste(c(savePath,"/",states[i],".tiff"), collapse = ""));
-		# plot(table(bMark, euclideanGroups), 
-		# 	main = paste(c("numOfStates= ", states[i])), xlab = "before discretization", ylab = "after discretization")
-		# dev.off();
 		cat(sprintf("-"))
 	}
 	print("");
-	# titleName = paste(c("euclidean", "ward"), collapse = "_")
-	# fileName = paste(c(titleName, "tiff"),collapse = ".")
-	# tiff(paste(c(savePath,fileName), collapse = "/"));
-	# plot(states, euclideanPairWise, xlab= "Number of States", ylab = "Rand index", main = titleName, ylim = c(baseLine - 0.05, 0.7));
-	# abline(baseLine, 0);
-	# text(length(states)/2, baseLine + 0.05, "baseLine",col = "blue")
-	# dev.off();
-	titleName = "pairwise comparion_zscore discretization"
+
+	#ploting
+	
 	fileName = paste(c(titleName, "tiff"),collapse = ".")
-	tiff(paste(c(savePath,fileName), collapse = "/"));
+	tiff(file.path(savePath, fileName));
 	plot(states, euclideanPairWise, xlab = "Number of States", ylab = "Adjusted Rand Index", 
-		main = titleName,  ylim = c(baseLine - 0.05, 0.75), pch = 15, col = "red")
+		main = titleName,  ylim = c(baseLine - 0.05, 1), pch = 15, col = "red")
 	par(new = T)
-	plot(states, hammingPairWise, xlab = "Number of States", ylab = "Adjusted Rand Index", ylim = c(baseLine - 0.05, 0.75), 
+	plot(states, hammingPairWise, xlab = "Number of States", ylab = "Adjusted Rand Index", ylim = c(baseLine - 0.05, 1), 
 		xaxt = "n", yaxt="n", pch = 15, col = "green");
 	
 	if(length(benchMark) == length(bMark)) {
 		par(new = T);
-		plot(states, euclideanPam50, xlab = "Number of States", ylab = "Adjusted Rand Index", ylim = c(baseLine - 0.05, 0.75), 
+		plot(states, euclideanPam50, xlab = "Number of States", ylab = "Adjusted Rand Index", ylim = c(baseLine - 0.05, 1), 
 		xaxt = "n", yaxt="n", pch = 16, col = "red");
 		par(new = T);
-		plot(states, hammingPam50, xlab = "Number of States", ylab = "Adjusted Rand Index", ylim = c(baseLine - 0.05, 0.75), 
+		plot(states, hammingPam50, xlab = "Number of States", ylab = "Adjusted Rand Index", ylim = c(baseLine - 0.05, 1), 
 		xaxt = "n", yaxt="n", pch = 16, col = "green");
 	}
 	abline(baseLine, 0, col = "blue");
 	text(length(states)/2 + 2.5, baseLine + 0.05, "baseLine",col = "blue");
 	if(length(benchMark) == length(bMark)) {
-		legend(3, 0.2, c("euclidean_pair", "hamming_pair", "euclidean_pam50", "hamming_pam50"), pch=c(15,15, 16,16), col = c("red", "green", "red", "green"))
+		legend(lx, ly, c("euclidean_pair", "hamming_pair", "euclidean_pam50", "hamming_pam50"), pch=c(15,15, 16,16), col = c("red", "green", "red", "green"))
 	}
 	else {
-		legend(3, 0.15, c("euclidean_pair", "hamming_pair"), pch=c(15,15), col = c("red", "green"))
+		legend(lx, ly, c("euclidean_pair", "hamming_pair"), pch=c(15,15), col = c("red", "green"))
 	}
 	dev.off(); 
 	if(length(benchMark) != length(bMark))
@@ -154,15 +125,6 @@ pairWiseComparision = function(sData, savePath, numOfClusters, benchMark = c(),s
 	else 
 		data.frame(euclideanPairWise, hammingPairWise, euclideanPam50, hammingPam50)
 }
-
-
-
-
-
-
-
-
-
 
 # zeroOneScaling = function(vec) {
 # 	minVec = min(vec);
