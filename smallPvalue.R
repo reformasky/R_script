@@ -15,11 +15,17 @@ sData = sData[order(sData$"0"),]
 numOfGenes = 1 : 10 * 20;
 
 basePath = "./plots/pvalues"
-
-for(nGenes in numOfGenes) {
-	titleName = paste(c("Number of genes_", nGenes), collapse = "");
-	sourceData = sData[1: nGenes, hInfo > 0 & hInfo < 5];
-	benchmark = hInfo[hInfo > 0 & hInfo < 5];
-	similarity = pairWiseComparision(sourceData, savePath = basePath, 4, benchMark = benchmark,states = 3 : 5, 
-	titleName = titleName, lx = 4.2, ly = 0.9)
+states = 3 : 5
+normalization = c("normalizationZScore","normalizationLinear")
+discretization = c("discretizationZScore", "discretizationFloor")
+for(nGenes in numOfGenes) 
+	for(i in 1 : length(discretization)) {
+		titleName = paste(c(discretization[i],"Number of genes", nGenes), collapse = "_");
+		sourceData = sData[1: nGenes, hInfo > 0 & hInfo < 5];
+		benchmark = hInfo[hInfo > 0 & hInfo < 5];
+		bLine = baseLine(sourceData, numOfClusters = 4, normalization = match.fun(normalization[i]));
+		similarity = pairWiseComparision(sourceData, numOfClusters = 4,
+			benchMark = benchmark,states = states, discretization = match.fun(discretization[i]))
+		plotEvaluations(similarity, states = states, baseLine = bLine,
+		 	titleName = titleName, savePath = basePath, lx = 4.2, ly = 0.95)
 }

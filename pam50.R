@@ -33,5 +33,15 @@ hInfo = unlist(lapply(hInfo, processHeader));
 sourceData = sData[,hInfo > 0 & hInfo < 5];
 sourceData = as.matrix(sourceData);
 benchmark = hInfo[hInfo > 0 & hInfo < 5];
-savePath = "./plots/pam50/discrete_pairwise_cluster4_WO_NA_WO_NORMAL"
-similarities = pairWiseComparision(sourceData, savePath, numOfClusters = 4, benchMark = benchmark)
+basePath = "./plots/pam50"
+states  = 3  : 10
+normalization = c("normalizationZScore","normalizationLinear")
+discretization = c("discretizationZScore", "discretizationFloor")
+for(i in 1 : length(discretization)) {
+	titleName = discretization[i];
+	bLine = baseLine(sourceData, numOfClusters = 4, normalization = match.fun(normalization[i]));
+	similarity = pairWiseComparision(sourceData, numOfClusters = 4,
+		benchMark = benchmark,states = states, discretization = match.fun(discretization[i]))
+	plotEvaluations(similarity, states = states, baseLine = bLine,
+	 	titleName = titleName, savePath = basePath, lx = 7.2, ly = 1)
+}

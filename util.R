@@ -14,6 +14,18 @@ processHeader = function(str) {
 	}
 }
 
+#linearly scale a vector linearly
+normalizationLinear = function(vec) {
+	minVec = min(vec);
+	maxVec = max(vec);
+	(vec - minVec)/ (maxVec - minVec);
+}
+
+discretizationFloor = function(vec, numOfStates = 3) {
+	vec = normalizationLinear(vec);
+	floor(vec * numOfStates);
+} 
+
 
 #normalize a vec basing on zScore; remember, when used in apply, if MARGIN == 1, will resulted a transposed matrix
 normalizationZScore = function(vec) {
@@ -43,28 +55,32 @@ hammingMatrix = function(mtx) {
 	as.dist(result)
 }
 
-# evaluate the effect of discretization on hclust, compares the clustering before and after discretization;
-# if the true label is supplied, also compares the clustering of true label and after discretization;
-# use two distance functions, euclidian and hamming distance.
-pairWiseComparision = function(sData, savePath, numOfClusters, benchMark = c(),states = 3 : 10, 
-	titleName = "pairwise comparion_zscore discretization", lx = 3, ly = 0.2, printTable = FALSE ) {
 
-	sourceData = apply(sData, MARGIN = 1, normalizationZScore);
+baseLine = function(sData, numOfClusters, normalization = normalizationZScore) {
+	sourceData = apply(sData, MARGIN = 1, normalization);
 	distances = dist(sourceData)
 	fit = hclust(distances)
 	bMark = cutree(fit, k = numOfClusters)
-
+	
 	shuffleData = apply(t(sourceData), MARGIN = 1, sample)
 	distances = dist(shuffleData)
 	fit = hclust(distances)
 	randomMark = cutree(fit, k = numOfClusters);
-
 	baseLine = RRand(bMark, randomMark)$adjRand
-
+}
+# evaluate the effect of discretization on hclust, compares the clustering before and after discretization;
+# if the true label is supplied, also compares the clustering of true label and after discretization;
+# use two distance functions, euclidian and hamming distance.
+pairWiseComparision = function(sData, numOfClusters, benchMark = c(),states = 3 : 10, discretization = discretizationZScore) {
+	sourceData = apply(sData, MARGIN = 1, normalizationZScore);
+	distances = dist(sourceData)
+	fit = hclust(distances)
+	bMark = cutree(fit, k = numOfClusters)
+	
 	cluster = function(sData, numOfStates) {
 		euclideanGroups = sample(length(bMark), x = 1 : numOfClusters, replace = TRUE);
 		hammingGroups = sample(length(bMark), x = 1 : numOfClusters, replace = TRUE);
-		sourceData = apply(sData, MARGIN = 1, discretizationZScore, numOfStates);
+		sourceData = apply(sData, MARGIN = 1, discretization, numOfStates);
 		euclideanDistance = dist(sourceData);
 		hammingDistance = hammingMatrix(sourceData);
 		euclideanFit = hclust(euclideanDistance);
@@ -76,8 +92,8 @@ pairWiseComparision = function(sData, savePath, numOfClusters, benchMark = c(),s
 
 	euclideanPairWise = replicate(length(states), 0);
 	hammingPairWise  = replicate(length(states), 0);
-	euclideanPam50 = replicate(length(states), 0);
-	hammingPam50 = replicate(length(states), 0)
+	euclideanBench = replicate(length(states), 0);
+	hammingBench = replicate(length(states), 0)
 	cat(paste(replicate(length(states), "*"), collapse = ""))
 	print("")
 	for(i in 1 : length(states)) {
@@ -85,59 +101,45 @@ pairWiseComparision = function(sData, savePath, numOfClusters, benchMark = c(),s
 		euclideanPairWise[i] = RRand(bMark, euclideanGroups)$adjRand;
 		hammingGroups = cluster(sData, states[i])$hammingGroups;
 		hammingPairWise[i] = RRand(bMark, hammingGroups)$adjRand;
-		if(length(benchMark) == length(bMark)) {
-			euclideanPam50[i] = RRand(benchMark, euclideanGroups)$adjRand;
-			hammingPam50[i] = RRand(benchMark, hammingGroups)$adjRand;
+		if(length(benchMark) != 0) {
+			euclideanBench[i] = RRand(benchMark, euclideanGroups)$adjRand;
+			hammingBench[i] = RRand(benchMark, hammingGroups)$adjRand;
 		}
 		cat(sprintf("-"))
 	}
 	print("");
-
-	#ploting
-	
-	fileName = paste(c(titleName, "tiff"),collapse = ".")
-	tiff(file.path(savePath, fileName));
-	plot(states, euclideanPairWise, xlab = "Number of States", ylab = "Adjusted Rand Index", 
-		main = titleName,  ylim = c(baseLine - 0.05, 1), pch = 15, col = "red")
-	par(new = T)
-	plot(states, hammingPairWise, xlab = "Number of States", ylab = "Adjusted Rand Index", ylim = c(baseLine - 0.05, 1), 
-		xaxt = "n", yaxt="n", pch = 15, col = "green");
-	
-	if(length(benchMark) == length(bMark)) {
-		par(new = T);
-		plot(states, euclideanPam50, xlab = "Number of States", ylab = "Adjusted Rand Index", ylim = c(baseLine - 0.05, 1), 
-		xaxt = "n", yaxt="n", pch = 16, col = "red");
-		par(new = T);
-		plot(states, hammingPam50, xlab = "Number of States", ylab = "Adjusted Rand Index", ylim = c(baseLine - 0.05, 1), 
-		xaxt = "n", yaxt="n", pch = 16, col = "green");
-	}
-	abline(baseLine, 0, col = "blue");
-	text(length(states)/2 + 2.5, baseLine + 0.05, "baseLine",col = "blue");
-	if(length(benchMark) == length(bMark)) {
-		legend(lx, ly, c("euclidean_pair", "hamming_pair", "euclidean_pam50", "hamming_pam50"), pch=c(15,15, 16,16), col = c("red", "green", "red", "green"))
+	if(length(benchMark) != 0) {
+		return(data.frame(euclideanPairWise, hammingPairWise, euclideanBench,hammingBench));
 	}
 	else {
-		legend(lx, ly, c("euclidean_pair", "hamming_pair"), pch=c(15,15), col = c("red", "green"))
+		return(data.frame(euclideanPairWise, hammingPairWise));
 	}
-	dev.off(); 
-	if(length(benchMark) != length(bMark))
-		data.frame(euclideanPairWise, hammingPairWise)
-	else 
-		data.frame(euclideanPairWise, hammingPairWise, euclideanPam50, hammingPam50)
 }
 
-# zeroOneScaling = function(vec) {
-# 	minVec = min(vec);
-# 	maxVec = max(vec);
-# 	(vec - minVec)/ (maxVec - minVec);
-# }
+plotEvaluations = function(resultSet, states, baseLine, titleName, savePath, 
+	xLab = "Number of States", yLab = "adjusted Rand index", lx = 3, ly = 0.2) {
 
-
-
-# discretizationFloor = function(vec, numOfStates = 5) {
-# 	vec = zeroOneScaling(vec);
-# 	floor(vec * numOfStates);
-# } 
+	fileName = paste(c(titleName, "tiff"),collapse = ".")
+	tiff(file.path(savePath, fileName));
+	resultNumber = length(colnames(resultSet));
+	for(i in 1 : resultNumber) {
+		if( i == 1) {
+			plot(states, unlist(resultSet[i]), xlab = xLab, ylab = yLab, 
+				main = titleName,  ylim = c(baseLine - 0.05, 1), pch = i, cex = 1.5)
+		}
+		else {
+			par(new = T)
+			plot(states,unlist(resultSet[i]), xlab = xLab, ylab = yLab, ylim = c(baseLine - 0.05, 1), 
+		xaxt = "n", yaxt="n", pch = i, cex = 1.5);
+		}
+	}
+	abline(baseLine, 0, col = "blue", lty = 3);
+	text(length(states)/2 + 2.5, baseLine + 0.05, "baseLine",col = "blue");
+	legend(lx, ly, colnames(resultSet), pch=1 : resultNumber,
+	 cex = replicate(resultNumber, 1), pt.cex = replicate(resultNumber, 1.5));
+	dev.off(); 
+	
+}
 
 
 
