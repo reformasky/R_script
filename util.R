@@ -1,20 +1,27 @@
-#extract the sample information from header file: for non-samples(i.e.,
+library(phyclust, quiet = TRUE)
+
+library(ggdendro)
+library(ggplot2)
+library(gridExtra)
+#extract the sample information from header file (currently only good for genome portal data): for non-samples(i.e.,
 # GeneId, and other statistic results) return -1; for pValues, return 0;
-processHeader = function(str) {
-	sampleTypes = c("Basal","Her2","LumA","LumB","Normal", "NA")
+processHeader = function(str, sampleTypes) {
+	
 	stringVec = unlist(strsplit(str, split = ".", fixed = TRUE));
 	if (length(stringVec) >= 2){
 		which(sampleTypes == stringVec[1])
 	}
+	#only useful for selecting the features with small pValue
 	else if (str == "Pvalues"){
 		0;
 	}
+	# mark as discard data
 	else {
 		-1
 	}
 }
 
-#linearly scale a vector linearly
+#linearly scale a vector linearly into [0,1]
 normalizationLinear = function(vec) {
 	minVec = min(vec);
 	maxVec = max(vec);
@@ -23,9 +30,18 @@ normalizationLinear = function(vec) {
 
 discretizationFloor = function(vec, numOfStates = 3) {
 	vec = normalizationLinear(vec);
-	floor(vec * numOfStates);
+	vec = floor(vec * numOfStates);
+	vec[vec == numOfStates] = numOfStates - 1;
+	vec;
 } 
 
+
+discretizationQuantile = function(vec, numOfStates = 3) {
+	vec = rank(vec);
+	vec = floor(vec * numOfStates / length(vec));
+	vec[vec == numOfStates] = numOfStates - 1;
+	vec;
+}
 
 #normalize a vec basing on zScore; remember, when used in apply, if MARGIN == 1, will resulted a transposed matrix
 normalizationZScore = function(vec) {
@@ -39,14 +55,14 @@ discretizationZScore = function(vec, numOfStates = 3) {
 	floor( pnorm(normalizationZScore(vec)) * numOfStates );
 }
 
-#calculate the hamming distance between ROWs of matrix.
+#calculate the hamming distance between ROWs of matrix, returns a dist object
 hammingMatrix = function(mtx) {
 	hammingDistance = function(vec1, vec2) {
 		sum(as.integer(vec1) != as.integer(vec2))
 	}
 
 	result = matrix(0, nrow = dim(mtx)[1], ncol = dim(mtx)[1])
-
+	colnames(result) = rownames(result) = rownames(mtx);
 	for( i in 1 : (dim(mtx)[1] - 1) ){
 		for(j in (i + 1) : dim(mtx)[1]) {
 			result[i,j] = result[j,i] = hammingDistance(mtx[i,], mtx[j,])
@@ -56,8 +72,10 @@ hammingMatrix = function(mtx) {
 }
 
 
+# generate a baseLine by calculating the cluster assignment with orginal data and shuffled data(per gene)
 baseLine = function(sData, numOfClusters, normalization = normalizationZScore) {
 	sourceData = apply(sData, MARGIN = 1, normalization);
+	
 	distances = dist(sourceData)
 	fit = hclust(distances)
 	bMark = cutree(fit, k = numOfClusters)
@@ -68,26 +86,32 @@ baseLine = function(sData, numOfClusters, normalization = normalizationZScore) {
 	randomMark = cutree(fit, k = numOfClusters);
 	baseLine = RRand(bMark, randomMark)$adjRand
 }
+
 # evaluate the effect of discretization on hclust, compares the clustering before and after discretization;
 # if the true label is supplied, also compares the clustering of true label and after discretization;
 # use two distance functions, euclidian and hamming distance.
-pairWiseComparision = function(sData, numOfClusters, benchMark = c(),states = 3 : 10, discretization = discretizationZScore) {
-	sourceData = apply(sData, MARGIN = 1, normalizationZScore);
+# return a dataFrame 
+pairWiseComparision = function(sData, numOfClusters, benchMark = c(),states = 3 : 10, normalization, 
+	discretization, dendro = FALSE, savePath, titleName) {
+	sourceData = apply(sData, MARGIN = 1, normalization);
 	distances = dist(sourceData)
 	fit = hclust(distances)
+	if(dendro != FALSE) {
+		plotDendrogram(fit, savePath = savePath, titleName = titleName);
+	}
+
 	bMark = cutree(fit, k = numOfClusters)
 	
-	cluster = function(sData, numOfStates) {
-		euclideanGroups = sample(length(bMark), x = 1 : numOfClusters, replace = TRUE);
-		hammingGroups = sample(length(bMark), x = 1 : numOfClusters, replace = TRUE);
+	euclidianCluster = function(sData, numOfStates) {
 		sourceData = apply(sData, MARGIN = 1, discretization, numOfStates);
 		euclideanDistance = dist(sourceData);
-		hammingDistance = hammingMatrix(sourceData);
 		euclideanFit = hclust(euclideanDistance);
+	}
+
+	hammingCluster = function(sData, numOfStates) {
+		sourceData = apply(sData, MARGIN = 1, discretization, numOfStates);
+		hammingDistance = hammingMatrix(sourceData);
 		hammingFit = hclust(hammingDistance);
-		euclideanGroups = cutree(euclideanFit, k = numOfClusters);
-		hammingGroups = cutree(hammingFit, k = numOfClusters);
-		data.frame(euclideanGroups, hammingGroups);
 	}
 
 	euclideanPairWise = replicate(length(states), 0);
@@ -97,18 +121,28 @@ pairWiseComparision = function(sData, numOfClusters, benchMark = c(),states = 3 
 	cat(paste(replicate(length(states), "*"), collapse = ""))
 	print("")
 	for(i in 1 : length(states)) {
-		euclideanGroups = cluster(sData, states[i])$euclideanGroups;
+		euclideanFit = euclidianCluster(sData, states[i]);
+		euclideanGroups = cutree(euclideanFit, k = numOfClusters);
 		euclideanPairWise[i] = RRand(bMark, euclideanGroups)$adjRand;
-		hammingGroups = cluster(sData, states[i])$hammingGroups;
+
+		hammingFit = hammingCluster(sData, states[i])
+		hammingGroups = cutree(hammingFit, k = numOfClusters);
 		hammingPairWise[i] = RRand(bMark, hammingGroups)$adjRand;
-		if(length(benchMark) != 0) {
+		if(length(benchMark) > 1) {
 			euclideanBench[i] = RRand(benchMark, euclideanGroups)$adjRand;
 			hammingBench[i] = RRand(benchMark, hammingGroups)$adjRand;
+		}
+
+		if(dendro == states[i]) {
+			plotDendrogram(euclideanFit, savePath = savePath, 
+				titleName = paste(c(titleName, "euclidean", "numOfStates", dendro), collapse = "_"));
+			plotDendrogram(hammingFit, savePath = savePath,
+				titleName = paste(c(titleName, "hamming", "numOfStates", dendro), collapse = "_"))
 		}
 		cat(sprintf("-"))
 	}
 	print("");
-	if(length(benchMark) != 0) {
+	if(length(benchMark) > 1) {
 		return(data.frame(euclideanPairWise, hammingPairWise, euclideanBench,hammingBench));
 	}
 	else {
@@ -139,6 +173,30 @@ plotEvaluations = function(resultSet, states, baseLine, titleName, savePath,
 	 cex = replicate(resultNumber, 1), pt.cex = replicate(resultNumber, 1.5));
 	dev.off(); 
 	
+}
+
+#fit: from hclust; benchMark, true labeling
+plotDendrogram = function(fit, savePath, titleName) {
+	p1 = ggdendrogram(fit, rotate = FALSE, leaf_labels = FALSE, labels = FALSE);
+	df = data.frame(seq = 1 : length(fit$labels), cluster = fit$labels[fit$order]);
+	p2<-ggplot(df,aes(seq,y=1,fill=factor(cluster)))+geom_tile()+
+	  scale_y_continuous(expand=c(0,0))+
+	  theme(axis.title=element_blank(),
+	        axis.ticks=element_blank(),
+	        axis.text=element_blank(),
+	        plot.background = element_blank(),
+   			panel.grid.major = element_blank(),
+   			panel.grid.minor = element_blank(),
+   			panel.border = element_blank(),
+	        legend.position="none");
+	gp1<-ggplotGrob(p1)
+	gp2<-ggplotGrob(p2)
+	maxWidth = grid::unit.pmax(gp1$widths[2:5], gp2$widths[2:5])
+	gp1$widths[2:5] <- as.list(maxWidth)
+	gp2$widths[2:5] <- as.list(maxWidth)
+	tiff(file.path(savePath, paste(c(titleName,".tiff"), collapse = "")));
+	grid.arrange(gp1, gp2, ncol=1,heights=c(4/5,1/5), main = titleName); 
+	dev.off(); 
 }
 
 

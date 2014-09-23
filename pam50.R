@@ -9,7 +9,7 @@ set.seed(1024)
 sData = read.csv("./pam50_label_orginal.xls", sep = "\t", header=TRUE);
 #process header information(for labeling)
 hInfo = colnames(sData);
-hInfo = unlist(lapply(hInfo, processHeader));
+hInfo = unlist(lapply(hInfo, processHeader,c("Basal","Her2","LumA","LumB")));
 
 # #test the performance of different scaling, distance and clustering functions 
 # sourceData = sData[,hInfo > 0];
@@ -35,13 +35,13 @@ sourceData = as.matrix(sourceData);
 benchmark = hInfo[hInfo > 0 & hInfo < 5];
 basePath = "./plots/pam50"
 states  = 3  : 10
-normalization = c("normalizationZScore","normalizationLinear")
-discretization = c("discretizationZScore", "discretizationFloor")
+normalization = c("normalizationZScore","normalizationLinear", "normalizationLinear")
+discretization = c("discretizationZScore", "discretizationFloor", "discretizationQuantile")
 for(i in 1 : length(discretization)) {
 	titleName = discretization[i];
 	bLine = baseLine(sourceData, numOfClusters = 4, normalization = match.fun(normalization[i]));
-	similarity = pairWiseComparision(sourceData, numOfClusters = 4,
-		benchMark = benchmark,states = states, discretization = match.fun(discretization[i]))
+	similarity = pairWiseComparision(sourceData, numOfClusters = 4,benchMark = benchmark,states = states,
+		normalization = normalization[i], discretization = match.fun(discretization[i]))
 	plotEvaluations(similarity, states = states, baseLine = bLine,
 	 	titleName = titleName, savePath = basePath, lx = 7.2, ly = 1)
 }

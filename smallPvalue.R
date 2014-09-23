@@ -24,8 +24,8 @@ for(nGenes in numOfGenes)
 		sourceData = sData[1: nGenes, hInfo > 0 & hInfo < 5];
 		benchmark = hInfo[hInfo > 0 & hInfo < 5];
 		bLine = baseLine(sourceData, numOfClusters = 4, normalization = match.fun(normalization[i]));
-		similarity = pairWiseComparision(sourceData, numOfClusters = 4,
-			benchMark = benchmark,states = states, discretization = match.fun(discretization[i]))
+		similarity = pairWiseComparision(sourceData, numOfClusters = 4,benchMark = benchmark,states = states, 
+			normalization = normalization[i], discretization = match.fun(discretization[i]))
 		plotEvaluations(similarity, states = states, baseLine = bLine,
 		 	titleName = titleName, savePath = basePath, lx = 4.2, ly = 0.95)
 }
