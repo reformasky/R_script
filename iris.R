@@ -4,6 +4,7 @@ set.seed(1024)
 
 sData = read.csv("./iris.txt", sep = ",", header = FALSE)
 basePath = "./plots/iris"
+savePath = "./processedData/discretizations/iris.csv"
 states = 3 : 5
 sourceData = sData[, 1 : 4];
 sourceData = t(sourceData)
@@ -14,11 +15,20 @@ numOfClusters = 3
 benchMark = as.numeric(colnames(sourceData))
 
 for(i in 1 : length(discretization)) {
-	titleName = paste(c(discretization[i],"iris", "sd", sd), collapse = "_")
+	titleName = paste(c(discretization[i],"iris"), collapse = "_")
 	bLine = baseLine(sourceData, numOfClusters, normalization = match.fun(normalization[i]))
 	similarity = pairWiseComparision(sourceData, numOfClusters = numOfClusters, states = states, 
 		normalization = normalization[i], discretization = match.fun(discretization[i]), benchMark = benchMark, 
 		dendro = 3, savePath = basePath,titleName = paste(c(titleName,"dendrograph"), collapse = "_"));
 	plotEvaluations(similarity, states, baseLine = bLine, 
 		titleName = titleName, savePath = basePath, lx = 4.2, ly = 0.92)
+	colnames(similarity) = paste(discretization[i], colnames(similarity), sep = " ")
+	if(i == 1) {
+			savedData = data.frame(similarity);
+		}
+	else {
+		savedData = data.frame(savedData, similarity);
+	}
 }
+
+write.csv(savedData, savePath)

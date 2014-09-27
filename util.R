@@ -3,6 +3,7 @@ library(phyclust, quiet = TRUE)
 library(ggdendro)
 library(ggplot2)
 library(gridExtra)
+library(gplots)
 #extract the sample information from header file (currently only good for genome portal data): for non-samples(i.e.,
 # GeneId, and other statistic results) return -1; for pValues, return 0;
 processHeader = function(str, sampleTypes) {
@@ -143,11 +144,15 @@ pairWiseComparision = function(sData, numOfClusters, benchMark = c(),states = 3 
 	}
 	print("");
 	if(length(benchMark) > 1) {
-		return(data.frame(euclideanPairWise, hammingPairWise, euclideanBench,hammingBench));
+		result  = data.frame(euclideanPairWise, hammingPairWise, euclideanBench,hammingBench);
+
 	}
 	else {
-		return(data.frame(euclideanPairWise, hammingPairWise));
+		result = data.frame(euclideanPairWise, hammingPairWise);
 	}
+	rownames(result) = states;
+	
+	return(result);
 }
 
 plotEvaluations = function(resultSet, states, baseLine, titleName, savePath, 
@@ -194,12 +199,53 @@ plotDendrogram = function(fit, savePath, titleName) {
 	maxWidth = grid::unit.pmax(gp1$widths[2:5], gp2$widths[2:5])
 	gp1$widths[2:5] <- as.list(maxWidth)
 	gp2$widths[2:5] <- as.list(maxWidth)
-	tiff(file.path(savePath, paste(c(titleName,".tiff"), collapse = "")));
+	tiff(file.path(savePath, paste(c(titleName,".tiff"), collapse = "")), units="in", width=11, height= 8, res=300);
 	grid.arrange(gp1, gp2, ncol=1,heights=c(4/5,1/5), main = titleName); 
 	dev.off(); 
 }
 
 
+
+
+evaluationFunctions = function(sData, numOfClusters, scalingMethod, distanceMethod, clusterMethod) {
+	benchMark = as.numeric(colnames(sData))
+ 	groups = sample(length(benchMark), x = 1: numOfClusters, replace = TRUE);
+ 	tryCatch({
+ 		sourceData = apply(sData, MARGIN = 1, match.fun(scalingMethod));
+		distances = dist(sourceData, method = distanceMethod);
+		fit = hclust(distances, method = clusterMethod);
+		groups = cutree(fit, k= numOfClusters);
+ 	},
+ 	error = function(cond){print(scalingMethod);
+ 		print(distanceMethod);
+ 		print(clusterMethod)})
+ 	
+	RRand(groups, benchMark);
+}
+
+evaluateDistanceAndClustering = function(sData, numOfClusters = 4, titleName, scalingMethod,
+	distances = c( "euclidean", "maximum", "manhattan",  "minkowski","canberra"),
+	clusterings = c( "ward", "single", "complete", "average", "mcquitty", "median", "centroid"),
+	savePath = "./plots/distancesAndClusterings") {
+	savePath = file.path(savePath, paste(c(titleName, "tiff"), collapse = "."));
+	result = matrix(0, nrow = length(distances), ncol = length(clusterings));
+	rownames(result) = distances;
+	colnames(result) = clusterings;
+	benchmark = as.numeric(rownames(sData));
+	for(r in 1 : dim(result)[1]) {
+		for(c in 1 : dim(result)[2]) {
+			
+			result[r,c] = evaluationFunctions(sData, numOfClusters = numOfClusters, scalingMethod = scalingMethod,
+				distanceMethod = distances[r], clusterMethod = clusterings[c])$adjRand;
+		}
+	}
+	result = format(result, digits = 3)
+	tiff(file=savePath, units="in", width=11, height= 4, res=300);
+	textplot(result, cmar = 1.2, rmar = 1.2);
+	title(titleName)
+	dev.off();
+	result;
+}
 
 # discretizationEqual = function(vec, numOfStates = 5) {
 # 	step = ceiling(length(vec) / numOfStates);
@@ -208,18 +254,7 @@ plotDendrogram = function(fit, savePath, titleName) {
 #  }
 
 
-# evaluationFunctions = function(sData, numOfClusters, scalingMethod, distanceMethod, clusterMethod, benchMark) {
-#  	groups = sample(length(benchMark), x = 1: numOfClusters, replace = TRUE);
-#  	tryCatch({
-#  		sourceData = apply(sData, MARGIN = 1, match.fun(scalingMethod));
-# 		distances = dist(sourceData, method = distanceMethod);
-# 		fit = hclust(distances, method = clusterMethod);
-# 		groups = cutree(fit, k= numOfClusters);
-#  	},
-#  	error = function(cond){print("err")})
- 	
-# 	RRand(groups, benchMark);
-# }
+
 
 # plotFunctions = function(sourceData, savePath) {
 # 	#parameters for hclust;
