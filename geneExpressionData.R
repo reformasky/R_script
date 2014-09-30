@@ -8,11 +8,11 @@ sampleTypesList = list(c("Basal","Her2","LumA","LumB"),
 					c("G1", "G2", "G3"),
 					c("quart1","quart2","quart3","quart4"));
 numOfClustersList = c(4, 2, 2, 2,3, 4);
-statesList = list(3 : 10, 3 :5, 3: 5, 3 : 5, 3 : 5, 3 :5)
+statesList = list(3 : 5, 3 :5, 3: 5, 3 : 5, 3 : 5, 3 :5)
 
-for( i in 1 : length(fileNamesList)) {
-	geneExpressionData(sourceFile = fileNamesList[i], sampleTypes = unlist(sampleTypesList[i]), numOfClusters = numOfClustersList[i], states = unlist(statesList[i]))
-}
+# for( i in 1 : length(fileNamesList)) {
+# 	geneExpressionData(sourceFile = fileNamesList[i], sampleTypes = unlist(sampleTypesList[i]), numOfClusters = numOfClustersList[i], states = unlist(statesList[i]))
+# }
 
 
-# geneExpressionData(sourceFile = fileNamesList[6], sampleTypes = unlist(sampleTypesList[6]), numOfClusters = numOfClustersList[6], states = unlist(statesList[6]))
+ geneExpressionData(sourceFile = fileNamesList[6], sampleTypes = unlist(sampleTypesList[6]), numOfClusters = numOfClustersList[6], states = unlist(statesList[6]))

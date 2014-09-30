@@ -32,25 +32,30 @@ for(sd in sds){
 	benchMark = as.numeric(colnames(sourceData))
 	plotBase = file.path(plotPath, paste(c("sd", sd), collapse = "_"))
 	saveFileName =  paste(c("sd", sd), collapse = "_");
-	saveFileName = paste(c(saveFileName, ".csv"), collapse = "")
-	saveFileName = file.path(saveBase, saveFileName)
+	
+	
 	for(i in 1 : length(discretization)) {
 		titleName = paste(c(discretization[i],"simulation", "sd", sd), collapse = "_")
 		bLine = baseLine(sourceData, numOfClusters, normalization = match.fun(normalization[i]))
-		similarity = pairWiseComparision(sourceData, numOfClusters = numOfClusters, states = states, 
+		result = pairWiseComparision(sourceData, numOfClusters = numOfClusters, states = states, 
 			normalization = normalization[i], discretization = match.fun(discretization[i]), benchMark = benchMark, 
 			dendro = 3, savePath = plotBase,titleName = paste(c(titleName,"dendrograph"), collapse = "_"));
-		plotEvaluations(similarity, states, baseLine = bLine, 
+		plotEvaluations(result, states, baseLine = bLine, 
 			titleName = titleName, savePath = plotBase, lx = 4.2, ly = 0.92)
+		similarity = data.frame(result$discretized)
+		noDiscretizeVsTrueLabel = result$noDiscretizeVsTrueLabel
 		colnames(similarity) = paste(discretization[i], colnames(similarity), sep = " ")
 		if(i == 1) {
-				savedData = data.frame(similarity);
-			}
+			savedData = data.frame(similarity);
+			noDiscretization = data.frame(noDiscretizeVsTrueLabel)
+		}
 		else {
 			savedData = data.frame(savedData, similarity);
+			noDiscretization = data.frame(noDiscretization, noDiscretizeVsTrueLabel )
 		}
 	}
-	print(savedData)
-	write.csv(savedData, file = saveFileName)
+	write.csv(noDiscretization, file = file.path(saveBase, paste(c("noD_",saveFileName, ".csv"), collapse = "")))
+	saveFileName = paste(c(saveFileName, ".csv"), collapse = "")
+	write.csv(savedData, file =  file.path(saveBase, saveFileName))
 
 }

@@ -115,23 +115,23 @@ pairWiseComparision = function(sData, numOfClusters, benchMark = c(),states = 3 
 		hammingFit = hclust(hammingDistance);
 	}
 
-	euclideanPairWise = replicate(length(states), 0);
-	hammingPairWise  = replicate(length(states), 0);
-	euclideanBench = replicate(length(states), 0);
-	hammingBench = replicate(length(states), 0)
+	eVsNoDiscretize = replicate(length(states), 0);
+	hvsNoDiscretize  = replicate(length(states), 0);
+	evsTrueLabel = replicate(length(states), 0);
+	hvsTrueLabel = replicate(length(states), 0)
 	cat(paste(replicate(length(states), "*"), collapse = ""))
 	print("")
 	for(i in 1 : length(states)) {
 		euclideanFit = euclidianCluster(sData, states[i]);
 		euclideanGroups = cutree(euclideanFit, k = numOfClusters);
-		euclideanPairWise[i] = RRand(bMark, euclideanGroups)$adjRand;
+		eVsNoDiscretize[i] = RRand(bMark, euclideanGroups)$adjRand;
 
 		hammingFit = hammingCluster(sData, states[i])
 		hammingGroups = cutree(hammingFit, k = numOfClusters);
-		hammingPairWise[i] = RRand(bMark, hammingGroups)$adjRand;
+		hvsNoDiscretize[i] = RRand(bMark, hammingGroups)$adjRand;
 		if(length(benchMark) > 1) {
-			euclideanBench[i] = RRand(benchMark, euclideanGroups)$adjRand;
-			hammingBench[i] = RRand(benchMark, hammingGroups)$adjRand;
+			evsTrueLabel[i] = RRand(benchMark, euclideanGroups)$adjRand;
+			hvsTrueLabel[i] = RRand(benchMark, hammingGroups)$adjRand;
 		}
 
 		if(dendro == states[i]) {
@@ -144,38 +144,50 @@ pairWiseComparision = function(sData, numOfClusters, benchMark = c(),states = 3 
 	}
 	print("");
 	if(length(benchMark) > 1) {
-		result  = data.frame(euclideanPairWise, hammingPairWise, euclideanBench,hammingBench);
+		discretized  = data.frame(eVsNoDiscretize, hvsNoDiscretize, evsTrueLabel,hvsTrueLabel);
 
 	}
 	else {
-		result = data.frame(euclideanPairWise, hammingPairWise);
+		discretized = data.frame(eVsNoDiscretize, hvsNoDiscretize);
 	}
-	rownames(result) = states;
-	
+	rownames(discretized) = states;
+	noDiscretizeVsTrueLabel = 1;
+	if(length(benchMark) > 0)
+		noDiscretizeVsTrueLabel = RRand(benchMark, bMark) $adjRand
+	result = list(discretized = discretized, noDiscretizeVsTrueLabel = noDiscretizeVsTrueLabel )
 	return(result);
 }
 
-plotEvaluations = function(resultSet, states, baseLine, titleName, savePath, 
+plotEvaluations = function(results, states, baseLine, titleName, savePath, 
 	xLab = "Number of States", yLab = "adjusted Rand index", lx = 3, ly = 0.2) {
+
+	resultSet = data.frame(results$discretized);
+	noDiscretizeVsTrueLabel = unlist(results$noDiscretizeVsTrueLabel)[1];
 
 	fileName = paste(c(titleName, "tiff"),collapse = ".")
 	tiff(file.path(savePath, fileName));
 	resultNumber = length(colnames(resultSet));
 	for(i in 1 : resultNumber) {
+		yData = unlist(resultSet[i])
 		if( i == 1) {
-			plot(states, unlist(resultSet[i]), xlab = xLab, ylab = yLab, 
+			plot(states, yData, xlab = xLab, ylab = yLab, xaxt = "n",
 				main = titleName,  ylim = c(baseLine - 0.05, 1), pch = i, cex = 1.5)
 		}
 		else {
 			par(new = T)
-			plot(states,unlist(resultSet[i]), xlab = xLab, ylab = yLab, ylim = c(baseLine - 0.05, 1), 
+			plot(states,yData, xlab = xLab, ylab = yLab, ylim = c(baseLine - 0.05, 1), 
 		xaxt = "n", yaxt="n", pch = i, cex = 1.5);
 		}
 	}
-	abline(baseLine, 0, col = "blue", lty = 3);
-	text(length(states)/2 + 2.5, baseLine + 0.05, "baseLine",col = "blue");
-	legend(lx, ly, colnames(resultSet), pch=1 : resultNumber,
-	 cex = replicate(resultNumber, 1), pt.cex = replicate(resultNumber, 1.5));
+	axis(1, at = states)
+	abline(baseLine, 0, col = "blue", lty = 3)
+	if(noDiscretizeVsTrueLabel < 1) {
+		abline(noDiscretizeVsTrueLabel, 0, col = "green", lty = 5);
+
+	}
+
+	# legend(lx, ly, colnames(resultSet), pch=1 : resultNumber,
+	#  cex = replicate(resultNumber, 1), pt.cex = replicate(resultNumber, 1.5));
 	dev.off(); 
 	
 }

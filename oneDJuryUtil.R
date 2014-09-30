@@ -82,8 +82,8 @@ evaluateOneDJury = function(sData, genesInGroups, normalization,  discretization
 		randAgainstTrueLabel[i] = RRand(trueLabeling, groups)$adjRand
 		randAgainstNoDiscretization[i] = RRand(nonDiscretizedGroups, groups)$adjRand;		
 	}
-	result = matrix(c(randAgainstTrueLabel, randAgainstNoDiscretization), nrow = length(numOfStates));
-	colnames(result) = c("vsTrueLabel", "vsNoDiscretization");
+	result = data.frame( vsTrueLabel = randAgainstTrueLabel, vsNoDiscretization = randAgainstNoDiscretization)
 	rownames(result) = numOfStates;
 	result = format(result, digits = 3);
+	result = list(discretized = result, noDiscretizeVsTrueLabel = RRand(trueLabeling, nonDiscretizedGroups)$adjRand)
 }
