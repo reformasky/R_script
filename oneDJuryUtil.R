@@ -67,8 +67,11 @@ evaluateOneDJury = function(sData, genesInGroups, normalization,  discretization
 	nonDiscretizedGroups = cutree(fit, k = numOfClusters)
 	plotDendrogram(fit, savePath = plotBase, 
 		titleName = titleName);
-	randAgainstTrueLabel = replicate(length(numOfStates), 0);
-	randAgainstNoDiscretization = replicate(length(numOfStates), 0);
+
+	euclideanVsTrueLable = replicate(length(numOfStates), 0);
+	euclieanVsNoDiscretize = replicate(length(numOfStates), 0);
+
+
 	for(i in 1 : length(numOfStates)) {
 		state = numOfStates[i]
 		sourceData = oneDJuryScore(sData = sData, genesInGroups = genesInGroups, numOfStates = state, discretization = discretization);
@@ -79,10 +82,11 @@ evaluateOneDJury = function(sData, genesInGroups, normalization,  discretization
 				title = paste(c(discretization, "numOfStates", state), collapse = "_"))
 		}
 		groups = cutree(fit, k = numOfClusters);
-		randAgainstTrueLabel[i] = RRand(trueLabeling, groups)$adjRand
-		randAgainstNoDiscretization[i] = RRand(nonDiscretizedGroups, groups)$adjRand;		
+		euclideanVsTrueLable[i] = RRand(trueLabeling, groups)$adjRand
+		euclieanVsNoDiscretize[i] = RRand(nonDiscretizedGroups, groups)$adjRand;
+
 	}
-	result = data.frame( vsTrueLabel = randAgainstTrueLabel, vsNoDiscretization = randAgainstNoDiscretization)
+	result = data.frame( vsNoDiscretization = euclieanVsNoDiscretize, vsTrueLabel = euclideanVsTrueLable)
 	rownames(result) = numOfStates;
 	result = format(result, digits = 3);
 	result = list(discretized = result, noDiscretizeVsTrueLabel = RRand(trueLabeling, nonDiscretizedGroups)$adjRand)

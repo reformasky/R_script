@@ -33,7 +33,6 @@ numOfStates = 3 : 5;
 numOfClusters = 4;
 
 for (i in 1 : length(discretizations)) {
-	i = 3
 	titleName = discretizations[i];
 	results = evaluateOneDJury(sData = sData, genesInGroups = genesInGroups, numOfClusters = numOfClusters, normalizations[i], discretizations[i], plotBase = plotBase)
 	discretized = results$discretized

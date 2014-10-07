@@ -24,7 +24,7 @@ generateData = function(numOfFeatures = 100,numOfSamples = 200, numOfClusters = 
 		}
 		colnames(result) = labels;
 		result;
-	}
+}
 
 
 for(sd in sds){	

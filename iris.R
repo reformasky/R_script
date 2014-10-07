@@ -22,8 +22,8 @@ for(i in 1 : length(discretization)) {
 		dendro = 3, savePath = basePath,titleName = paste(c(titleName,"dendrograph"), collapse = "_"));
 	plotEvaluations(results, states, baseLine = bLine, 
 		titleName = titleName, savePath = basePath, lx = 4.2, ly = 0.92)
-	similarity = data.frame(result$discretized)
-		noDiscretizeVsTrueLabel = result$noDiscretizeVsTrueLabel
+	similarity = data.frame(results$discretized)
+	noDiscretizeVsTrueLabel = results$noDiscretizeVsTrueLabel
 	colnames(similarity) = paste(discretization[i], colnames(similarity), sep = " ")
 	if(i == 1) {
 			savedData = data.frame(similarity);

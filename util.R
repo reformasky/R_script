@@ -73,6 +73,20 @@ hammingMatrix = function(mtx) {
 }
 
 
+cosineMatrix = function(mtx) {
+	cosineSimilarity = function(vec1 , vec2) {
+		(vec1 %*% vec2) / sqrt(vec1 %*% vec1) / sqrt(vec2 %*% vec2)
+	}
+	result = matrix(1, nrow = dim(mtx)[1], ncol = dim(mtx)[1])
+	colnames(result) = rownames(result) = rownames(mtx);
+	for( i in 1 : (dim(mtx)[1] - 1) ){
+		for(j in (i + 1) : dim(mtx)[1]) {
+			result[i,j] = result[j,i] =1/ cosineSimilarity(mtx[i,], mtx[j,])
+		}
+	}
+	as.dist(result)
+}
+
 # generate a baseLine by calculating the cluster assignment with orginal data and shuffled data(per gene)
 baseLine = function(sData, numOfClusters, normalization = normalizationZScore) {
 	sourceData = apply(sData, MARGIN = 1, normalization);
@@ -94,9 +108,11 @@ baseLine = function(sData, numOfClusters, normalization = normalizationZScore) {
 # return a dataFrame 
 pairWiseComparision = function(sData, numOfClusters, benchMark = c(),states = 3 : 10, normalization, 
 	discretization, dendro = FALSE, savePath, titleName) {
+
 	sourceData = apply(sData, MARGIN = 1, normalization);
 	distances = dist(sourceData)
 	fit = hclust(distances)
+	
 	if(dendro != FALSE) {
 		plotDendrogram(fit, savePath = savePath, titleName = titleName);
 	}
@@ -165,24 +181,27 @@ plotEvaluations = function(results, states, baseLine, titleName, savePath,
 	noDiscretizeVsTrueLabel = unlist(results$noDiscretizeVsTrueLabel)[1];
 
 	fileName = paste(c(titleName, "tiff"),collapse = ".")
-	tiff(file.path(savePath, fileName));
+	tiff(file.path(savePath, fileName),units="in", width=6, height=6, res=300);
 	resultNumber = length(colnames(resultSet));
+	color = "black"
 	for(i in 1 : resultNumber) {
 		yData = unlist(resultSet[i])
 		if( i == 1) {
 			plot(states, yData, xlab = xLab, ylab = yLab, xaxt = "n",
-				main = titleName,  ylim = c(baseLine - 0.05, 1), pch = i, cex = 1.5)
+				main = titleName,  ylim = c(baseLine - 0.05, 1), pch = i, cex = 1.5, color = color)
 		}
 		else {
+			if ( i > (resultNumber / 2 ))
+			color = "red"
 			par(new = T)
 			plot(states,yData, xlab = xLab, ylab = yLab, ylim = c(baseLine - 0.05, 1), 
-		xaxt = "n", yaxt="n", pch = i, cex = 1.5);
+		xaxt = "n", yaxt="n", pch = i, cex = 1.5, col = color);
 		}
 	}
 	axis(1, at = states)
 	abline(baseLine, 0, col = "blue", lty = 3)
 	if(noDiscretizeVsTrueLabel < 1) {
-		abline(noDiscretizeVsTrueLabel, 0, col = "green", lty = 5);
+		abline(noDiscretizeVsTrueLabel, 0, col = "red", lty = 5);
 
 	}
 
