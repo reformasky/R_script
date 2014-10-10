@@ -10,7 +10,10 @@ processHeader = function(str, sampleTypes) {
 	
 	stringVec = unlist(strsplit(str, split = ".", fixed = TRUE));
 	if (length(stringVec) >= 2){
-		which(sampleTypes == stringVec[1])
+		if(stringVec[1] %in% sampleTypes)
+				which(sampleTypes == stringVec[1])
+		else
+			-1
 	}
 	#only useful for selecting the features with small pValue
 	else if (str == "Pvalues"){
@@ -24,6 +27,7 @@ processHeader = function(str, sampleTypes) {
 
 #linearly scale a vector linearly into [0,1]
 normalizationLinear = function(vec) {
+	vec = as.numeric(vec)
 	minVec = min(vec);
 	maxVec = max(vec);
 	(vec - minVec)/ (maxVec - minVec);
@@ -46,14 +50,18 @@ discretizationQuantile = function(vec, numOfStates = 3) {
 
 #normalize a vec basing on zScore; remember, when used in apply, if MARGIN == 1, will resulted a transposed matrix
 normalizationZScore = function(vec) {
+	vec = as.numeric(vec)
 	sdVec = sd(vec);
 	meanVec = mean(vec);
 	(vec - meanVec) / sdVec;
+
 }
 
 #discretize a vec into numOfStates, wach state with equal probility
 discretizationZScore = function(vec, numOfStates = 3) {
-	floor( pnorm(normalizationZScore(vec)) * numOfStates );
+	result = floor( pnorm(normalizationZScore(vec)) * numOfStates );
+	result[result >= numOfStates] = numOfStates - 1;
+	result;
 }
 
 #calculate the hamming distance between ROWs of matrix, returns a dist object
@@ -167,6 +175,7 @@ pairWiseComparision = function(sData, numOfClusters, benchMark = c(),states = 3 
 		discretized = data.frame(eVsNoDiscretize, hvsNoDiscretize);
 	}
 	rownames(discretized) = states;
+	discretized = t(discretized)
 	noDiscretizeVsTrueLabel = 1;
 	if(length(benchMark) > 0)
 		noDiscretizeVsTrueLabel = RRand(benchMark, bMark) $adjRand
@@ -174,42 +183,37 @@ pairWiseComparision = function(sData, numOfClusters, benchMark = c(),states = 3 
 	return(result);
 }
 
-plotEvaluations = function(results, states, baseLine, titleName, savePath, 
-	xLab = "Number of States", yLab = "adjusted Rand index", lx = 3, ly = 0.2) {
+plotBarGraph = function(sourceData, numOfClusters, fName, savePath,
+	normalization = c("normalizationLinear", "normalizationLinear", "normalizationZScore"), 
+ 	discretization = c( "discretizationQuantile",  "discretizationFloor", "discretizationZScore"), 
+ 	 states = 3 : 5) {
+	benchMark = as.numeric(colnames(sourceData))
 
-	resultSet = data.frame(results$discretized);
-	noDiscretizeVsTrueLabel = unlist(results$noDiscretizeVsTrueLabel)[1];
+	tiff(file.path(savePath, paste(c(fName, ".tiff"), collapse = "")), units="in", width=12, height=8, res=300)
+	par(mfrow  = c(1, length(discretization)))
 
-	fileName = paste(c(titleName, "tiff"),collapse = ".")
-	tiff(file.path(savePath, fileName),units="in", width=6, height=6, res=300);
-	resultNumber = length(colnames(resultSet));
-	color = "black"
-	for(i in 1 : resultNumber) {
-		yData = unlist(resultSet[i])
-		if( i == 1) {
-			plot(states, yData, xlab = xLab, ylab = yLab, xaxt = "n",
-				main = titleName,  ylim = c(baseLine - 0.05, 1), pch = i, cex = 1.5, color = color)
+	for(i in 1 : length(discretization)) {
+		titleName = paste(c(discretization[i],fName), collapse = "_")
+		# bLine = baseLine(sourceData, numOfClusters, normalization = match.fun(normalization[i]))
+		results = pairWiseComparision(sourceData, numOfClusters = numOfClusters, states = states, 
+			normalization = normalization[i], discretization = match.fun(discretization[i]), benchMark = benchMark, 
+			dendro = F, savePath = basePath,titleName = paste(c(titleName,"dendrograph"), collapse = "_"));
+		referenceLine = unlist(results$noDiscretizeVsTrueLabel)[1]
+		discretized = unlist(results$discretized)
+		plotData = cbind(discretized[1:4], discretized[5:8], discretized[9:12])
+		
+
+		if(i == 1) {
+			bp = barplot(plotData,beside = T, col = c("red", "green", "pink","blue"), xaxt = "n",  ylim = c(-0.05,1), ylab = "adjusted Rand Index")
 		}
 		else {
-			if ( i > (resultNumber / 2 ))
-			color = "red"
-			par(new = T)
-			plot(states,yData, xlab = xLab, ylab = yLab, ylim = c(baseLine - 0.05, 1), 
-		xaxt = "n", yaxt="n", pch = i, cex = 1.5, col = color);
+			bp = barplot(plotData,beside = T, col = c("red", "green", "pink","blue"), xaxt = "n", yaxt = "n",  ylim = c(-0.05,1))
 		}
+		abline(referenceLine, 0, col = "black", lty = 3, lwd = 2)
 	}
-	axis(1, at = states)
-	abline(baseLine, 0, col = "blue", lty = 3)
-	if(noDiscretizeVsTrueLabel < 1) {
-		abline(noDiscretizeVsTrueLabel, 0, col = "red", lty = 5);
-
-	}
-
-	# legend(lx, ly, colnames(resultSet), pch=1 : resultNumber,
-	#  cex = replicate(resultNumber, 1), pt.cex = replicate(resultNumber, 1.5));
-	dev.off(); 
-	
+	dev.off()
 }
+
 
 #fit: from hclust; benchMark, true labeling
 plotDendrogram = function(fit, savePath, titleName) {
@@ -255,9 +259,11 @@ evaluationFunctions = function(sData, numOfClusters, scalingMethod, distanceMeth
 }
 
 evaluateDistanceAndClustering = function(sData, numOfClusters = 4, titleName, scalingMethod,
-	distances = c( "euclidean", "maximum", "manhattan",  "minkowski","canberra"),
-	clusterings = c( "ward", "single", "complete", "average", "mcquitty", "median", "centroid"),
+	distances = c( "euclidean", "manhattan"),
+	clusterings = c( "single", "complete", "average", "median", "centroid", "ward"),
 	savePath = "./plots/distancesAndClusterings") {
+	xLab = "Clustering Algorithm"
+	yLab = "adjusted Rand Index"
 	savePath = file.path(savePath, paste(c(titleName, "tiff"), collapse = "."));
 	result = matrix(0, nrow = length(distances), ncol = length(clusterings));
 	rownames(result) = distances;
@@ -271,9 +277,15 @@ evaluateDistanceAndClustering = function(sData, numOfClusters = 4, titleName, sc
 		}
 	}
 	result = format(result, digits = 3)
-	tiff(file=savePath, units="in", width=11, height= 4, res=300);
-	textplot(result, cmar = 1.2, rmar = 1.2);
-	title(titleName)
+	tiff(file=savePath, units="in", width=5.5, height= 4, res=300);
+	plot(1 : dim(result)[2], result[1,], xlab = xLab, ylab = yLab, xaxt = "n",
+				main = titleName,  ylim = c(-0.05, 1), pch = 1, cex = 1.5)
+	for(i in 2 : dim(result)[1]) {
+		par(new = T)
+		plot(1 : dim(result)[2],result[i,], xlab = xLab, ylab = yLab, ylim = c( - 0.05, 1), 
+		xaxt = "n", yaxt="n", pch = i, cex = 1.5)
+	}
+	axis(1, at = 1 : dim(result)[2], labels = colnames(result))
 	dev.off();
 	result;
 }
@@ -349,4 +361,43 @@ evaluateDistanceAndClustering = function(sData, numOfClusters = 4, titleName, sc
 # 	tiff(paste(c(savePath,fileName), collapse = "/"));
 # 	plot(range, results, xlab= "Number of States", ylab = "Rand index", main = titleName);
 # 	dev.off();
+# }
+
+
+
+# plotEvaluations = function(results, states, baseLine, titleName, savePath, 
+# 	xLab = "Number of States", yLab = "adjusted Rand index", lx = 3, ly = 0.2) {
+
+# 	resultSet = data.frame(results$discretized);
+# 	noDiscretizeVsTrueLabel = unlist(results$noDiscretizeVsTrueLabel)[1];
+
+# 	fileName = paste(c(titleName, "tiff"),collapse = ".")
+# 	tiff(file.path(savePath, fileName),units="in", width=6, height=6, res=300);
+# 	resultNumber = length(colnames(resultSet));
+# 	color = "black"
+# 	for(i in 1 : resultNumber) {
+# 		yData = unlist(resultSet[i])
+# 		if( i == 1) {
+# 			plot(states, yData, xlab = xLab, ylab = yLab, xaxt = "n",
+# 				main = titleName,  ylim = c(baseLine - 0.05, 1), pch = i, cex = 1.5, color = color)
+# 		}
+# 		else {
+# 			if ( i > (resultNumber / 2 ))
+# 			color = "red"
+# 			par(new = T)
+# 			plot(states,yData, xlab = xLab, ylab = yLab, ylim = c(baseLine - 0.05, 1), 
+# 		xaxt = "n", yaxt="n", pch = i, cex = 1.5, col = color);
+# 		}
+# 	}
+# 	axis(1, at = states)
+# 	abline(baseLine, 0, col = "blue", lty = 3)
+# 	if(noDiscretizeVsTrueLabel < 1) {
+# 		abline(noDiscretizeVsTrueLabel, 0, col = "red", lty = 5);
+
+# 	}
+
+# 	# legend(lx, ly, colnames(resultSet), pch=1 : resultNumber,
+# 	#  cex = replicate(resultNumber, 1), pt.cex = replicate(resultNumber, 1.5));
+# 	dev.off(); 
+	
 # }

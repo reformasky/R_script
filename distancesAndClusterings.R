@@ -1,9 +1,14 @@
 setwd("D:/thesis")
 
 source("./R_script/util.R")
-fileNamesList = c("pam50", "miller_P53DLDA");
-sampleTypesList = list(c("Basal","Her2","LumA","LumB"),c("X0","X1"));
-numOfCLustersList = c(4,2);
+fileNamesList = c("pam50", "pam50_p53", "miller_er", "miller_P53DLDA","miller_elston", "yipeng");
+sampleTypesList = list(c("Basal","Her2","LumA","LumB"),
+					c("wild", "mutated"),
+					c("POS", "NEG"),
+					c("X0","X1"),
+					c("G1", "G2", "G3"),
+					c("quart1","quart2","quart3","quart4"));
+numOfCLustersList =  c(4, 2, 2, 2,3, 4);
 normalizationList = c("normalizationZScore", "normalizationLinear")
 
 for(i in 1 : length(fileNamesList)) {
@@ -20,8 +25,7 @@ for(i in 1 : length(fileNamesList)) {
 	for(j in 1 : length(normalizationList)) {
 		titleName = paste(c(fileNamesList[i], normalizationList[j]), collapse = "_");
 		evaluateDistanceAndClustering(sourceData, scalingMethod = normalizationList[j],numOfClusters = numOfCLustersList[i],titleName = titleName)
-	}
-		
+	}		
 
 }
 

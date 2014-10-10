@@ -28,31 +28,6 @@ geneExpressionData = function(sourceFileName, sampleTypes, numOfClusters,states 
 		dendro = F
 	}
 
-	for(i in 1 : length(discretization)) {
-		titleName = discretization[i];
-		bLine = baseLine(sourceData, numOfClusters = numOfClusters, normalization = match.fun(normalization[i]));
-		result = pairWiseComparision(sourceData, numOfClusters = numOfClusters, benchMark = benchmark,
-			states = states,
-			normalization = normalization[i], discretization = match.fun(discretization[i]), dendro = dendro,
-			savePath = plotPath,  titleName = paste(c(titleName,"dendrograph"), collapse = "_") )
-
-		print(result)
-		similarity = data.frame(result$discretized)
-		noDiscretizeVsTrueLabel = result$noDiscretizeVsTrueLabel
-		colnames(similarity) = paste(discretization[i], colnames(similarity), sep = " ")
-
-		plotEvaluations(result, states = states, baseLine = bLine,
-		 	titleName = titleName, savePath = plotPath, lx = 4.2, ly = 1)
-		if(i == 1) {
-			savedData = data.frame(similarity);
-			noDiscretization = data.frame(noDiscretizeVsTrueLabel)
-		}
-		else {
-			savedData = data.frame(savedData, similarity);
-			noDiscretization = data.frame(noDiscretization, noDiscretizeVsTrueLabel )
-		}
-	}
-	write.csv(savedData, file = paste(c(savePath, "csv"), collapse = "."))
-	write.csv(noDiscretization, file = paste(c(savePath, "_noD", ".csv"), collapse = ""))
+	plotBarGraph(sourceData, numOfClusters = numOfClusters, fName = sourceFileName, savePath = plotPath)
 
 }
