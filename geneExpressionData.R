@@ -6,8 +6,8 @@ sampleTypesList = list(c("Basal","Her2","LumA","LumB"),
 					c("POS", "NEG"),
 					c("X0","X1"),
 					c("G1", "G2", "G3"),
-					c("quart1","quart2","quart3","quart4"));
-numOfClustersList = c(4, 2, 2, 2,3, 4);
+					c("quart1","quart4"));
+numOfClustersList = c(4, 2, 2, 2,3, 2);
 statesList = list(3 : 5, 3 :5, 3: 5, 3 : 5, 3 : 5, 3 :5)
 
 for( i in 1 : length(fileNamesList)) {

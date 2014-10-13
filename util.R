@@ -189,8 +189,8 @@ plotBarGraph = function(sourceData, numOfClusters, fName, savePath,
  	 states = 3 : 5) {
 	benchMark = as.numeric(colnames(sourceData))
 
-	tiff(file.path(savePath, paste(c(fName, ".tiff"), collapse = "")), units="in", width=12, height=8, res=300)
-	par(mfrow  = c(1, length(discretization)))
+	tiff(file.path(savePath, paste(c(fName, ".tiff"), collapse = "")), units="in", width=8, height=6, res=300)
+	par(mfcol  = c(2, length(discretization)), mar = c(2,5,1,1))
 
 	for(i in 1 : length(discretization)) {
 		titleName = paste(c(discretization[i],fName), collapse = "_")
@@ -200,16 +200,24 @@ plotBarGraph = function(sourceData, numOfClusters, fName, savePath,
 			dendro = F, savePath = basePath,titleName = paste(c(titleName,"dendrograph"), collapse = "_"));
 		referenceLine = unlist(results$noDiscretizeVsTrueLabel)[1]
 		discretized = unlist(results$discretized)
-		plotData = cbind(discretized[1:4], discretized[5:8], discretized[9:12])
-		
-
+		plotData = cbind(discretized[1:2], discretized[5:6], discretized[9:10])
 		if(i == 1) {
-			bp = barplot(plotData,beside = T, col = c("red", "green", "pink","blue"), xaxt = "n",  ylim = c(-0.05,1), ylab = "adjusted Rand Index")
+			bp = barplot(plotData,beside = T, col = c("gray", "black"), xaxt = "n",  ylim = c(-0.05,1), ylab = "adjusted Rand Index")
 		}
 		else {
-			bp = barplot(plotData,beside = T, col = c("red", "green", "pink","blue"), xaxt = "n", yaxt = "n",  ylim = c(-0.05,1))
+			bp = barplot(plotData,beside = T, col = c("gray", "black"), xaxt = "n", yaxt = "n",  ylim = c(-0.05,1))
+		}		
+
+		plotData = cbind(discretized[3:4], discretized[7:8], discretized[11:12])
+		if(i == 1) {
+			bp = barplot(plotData,beside = T, col = c("red", "blue"), xaxt = "n",  ylim = c(-0.05,1), ylab = "adjusted Rand Index")
 		}
-		abline(referenceLine, 0, col = "black", lty = 3, lwd = 2)
+		else {
+			bp = barplot(plotData,beside = T, col = c("red", "blue"), xaxt = "n", yaxt = "n",  ylim = c(-0.05,1))
+		}
+		axis(1, at= c( 2, 5, 8), labels = c( 3, 4,5), tick = F)
+
+		abline(referenceLine, 0, col = "green", lty = 3, lwd = 2)
 	}
 	dev.off()
 }
@@ -276,17 +284,17 @@ evaluateDistanceAndClustering = function(sData, numOfClusters = 4, titleName, sc
 				distanceMethod = distances[r], clusterMethod = clusterings[c])$adjRand;
 		}
 	}
-	result = format(result, digits = 3)
-	tiff(file=savePath, units="in", width=5.5, height= 4, res=300);
-	plot(1 : dim(result)[2], result[1,], xlab = xLab, ylab = yLab, xaxt = "n",
-				main = titleName,  ylim = c(-0.05, 1), pch = 1, cex = 1.5)
-	for(i in 2 : dim(result)[1]) {
-		par(new = T)
-		plot(1 : dim(result)[2],result[i,], xlab = xLab, ylab = yLab, ylim = c( - 0.05, 1), 
-		xaxt = "n", yaxt="n", pch = i, cex = 1.5)
-	}
-	axis(1, at = 1 : dim(result)[2], labels = colnames(result))
-	dev.off();
+	# result = format(result, digits = 3)
+	# tiff(file=savePath, units="in", width=5.5, height= 4, res=300);
+	# plot(1 : dim(result)[2], result[1,], xlab = xLab, ylab = yLab, xaxt = "n",
+	# 			main = titleName,  ylim = c(-0.05, 1), pch = 1, cex = 1.5)
+	# for(i in 2 : dim(result)[1]) {
+	# 	par(new = T)
+	# 	plot(1 : dim(result)[2],result[i,], xlab = xLab, ylab = yLab, ylim = c( - 0.05, 1), 
+	# 	xaxt = "n", yaxt="n", pch = i, cex = 1.5)
+	# }
+	# axis(1, at = 1 : dim(result)[2], labels = colnames(result))
+	# dev.off();
 	result;
 }
 
