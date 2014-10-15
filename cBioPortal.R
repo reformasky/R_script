@@ -23,8 +23,8 @@ studiesIndex = c(28, 30,49,55)
 
 #studies Id for chromphobe, rental clear cell, ovarian servious and prostate ad
 studiesId = c("kich_tcga", "kirc_tcga_pub","ov_tcga","prad_tcga")
-sampleSize = c(66, 392, 158, 246)
-cummulated = c(0,66,66 + 392,66+392+158)
+sampleSize = c(66, 392 + 66, 66+392+158, 66+392+158+ 246)
+cummulated = c(0,66,66 + 392, 66+392+158) + 1
 
 #download data
 # for(i in 1 : length(studiesId)){

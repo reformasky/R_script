@@ -112,11 +112,12 @@ evaluateOneDJury = function(sData, genesInGroups, normalization,  discretization
 	titleName = paste(c(normalization, "noDiscretization","dengro"), collapse = "_")
 	trueLabeling = as.numeric(colnames(sData));
 	sourceData = apply(sData, MARGIN = 1, match.fun(normalization));
+	rownames(sourceData) = as.numeric(colnames(sData))
 	distance = dist(sourceData);
 	fit = hclust(distance)
 	nonDiscretizedGroups = cutree(fit, k = numOfClusters)
-	# plotDendrogram(fit, savePath = plotBase, 
-	# 	titleName = titleName);
+	plotDendrogram(fit, savePath = plotBase, 
+	 	titleName = titleName);
 
 	euclideanVsTrueLable = replicate(length(numOfStates), 0);
 	euclieanVsNoDiscretize = replicate(length(numOfStates), 0);
@@ -126,11 +127,12 @@ evaluateOneDJury = function(sData, genesInGroups, normalization,  discretization
 		state = numOfStates[i]
 		sourceData = apply(sData, MARGIN = 1, discretization , numOfStates = state)
 		sourceData = oneDJuryScore(sData = sourceData, genesInGroups = genesInGroups, numOfStates = state);
+		rownames(sourceData) = as.numeric(colnames(sData))
 		distance = dist(sourceData);
 		fit = hclust(distance)
 		if(state == dendro){
-			# plotDendrogram(fit, savePath = plotBase, 
-			# 	title = paste(c(discretization, "numOfStates", state), collapse = "_"))
+			plotDendrogram(fit, savePath = plotBase, 
+				titleName = paste(c(discretization, "numOfStates", state), collapse = "_"))
 		}
 		groups = cutree(fit, k = numOfClusters);
 		euclideanVsTrueLable[i] = RRand(trueLabeling, groups)$adjRand

@@ -3,8 +3,8 @@ source("./R_script/util.R")
 
 
 geneExpressionData = function(sourceFileName, sampleTypes, numOfClusters,states = 3 : 5,
-	normalization = c("normalizationZScore","normalizationLinear", "normalizationLinear"),
-	discretization = c("discretizationZScore", "discretizationFloor", "discretizationQuantile"),
+	normalization = c("normalizationLinear", "normalizationLinear", "normalizationZScore"),
+	discretization = c("discretizationQuantile", "discretizationZScore", "discretizationFloor"),
 	plotBase = "./plots",
 	saveBase = "./processedData/discretizations") {
 
@@ -28,6 +28,6 @@ geneExpressionData = function(sourceFileName, sampleTypes, numOfClusters,states 
 		dendro = F
 	}
 
-	plotBarGraph(sourceData, numOfClusters = numOfClusters, fName = sourceFileName, savePath = plotPath)
+	result = plotBarGraph(sourceData, numOfClusters = numOfClusters, fName = sourceFileName, savePath = plotPath )
 
 }

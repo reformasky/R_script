@@ -115,9 +115,10 @@ baseLine = function(sData, numOfClusters, normalization = normalizationZScore) {
 # use two distance functions, euclidian and hamming distance.
 # return a dataFrame 
 pairWiseComparision = function(sData, numOfClusters, benchMark = c(),states = 3 : 10, normalization, 
-	discretization, dendro = FALSE, savePath, titleName) {
+	discretization, dendro = FALSE, savePath = "./plots", titleName = "") {
 
 	sourceData = apply(sData, MARGIN = 1, normalization);
+	rownames(sourceData) = colnames(sData)
 	distances = dist(sourceData)
 	fit = hclust(distances)
 	
@@ -129,12 +130,16 @@ pairWiseComparision = function(sData, numOfClusters, benchMark = c(),states = 3 
 	
 	euclidianCluster = function(sData, numOfStates) {
 		sourceData = apply(sData, MARGIN = 1, discretization, numOfStates);
+		rownames(sourceData) = colnames(sData)
+
 		euclideanDistance = dist(sourceData);
 		euclideanFit = hclust(euclideanDistance);
 	}
 
 	hammingCluster = function(sData, numOfStates) {
 		sourceData = apply(sData, MARGIN = 1, discretization, numOfStates);
+		rownames(sourceData) = colnames(sData)
+
 		hammingDistance = hammingMatrix(sourceData);
 		hammingFit = hclust(hammingDistance);
 	}
@@ -186,11 +191,13 @@ pairWiseComparision = function(sData, numOfClusters, benchMark = c(),states = 3 
 plotBarGraph = function(sourceData, numOfClusters, fName, savePath,
 	normalization = c("normalizationLinear", "normalizationLinear", "normalizationZScore"), 
  	discretization = c( "discretizationQuantile",  "discretizationFloor", "discretizationZScore"), 
- 	 states = 3 : 5) {
+ 	states = 3 : 5) {
+	basePath = "./plots"
 	benchMark = as.numeric(colnames(sourceData))
 
 	tiff(file.path(savePath, paste(c(fName, ".tiff"), collapse = "")), units="in", width=8, height=6, res=300)
 	par(mfcol  = c(2, length(discretization)), mar = c(2,5,1,1))
+
 
 	for(i in 1 : length(discretization)) {
 		titleName = paste(c(discretization[i],fName), collapse = "_")
@@ -218,8 +225,15 @@ plotBarGraph = function(sourceData, numOfClusters, fName, savePath,
 		axis(1, at= c( 2, 5, 8), labels = c( 3, 4,5), tick = F)
 
 		abline(referenceLine, 0, col = "green", lty = 3, lwd = 2)
+		if(i == 1) {
+			saved = c(results)
+		}
+		else{
+			saved = c(saved, results)
+		}
 	}
 	dev.off()
+	saved
 }
 
 

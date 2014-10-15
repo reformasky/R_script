@@ -11,8 +11,8 @@ numOfClustersList = c(4, 2, 2, 2,3, 2);
 statesList = list(3 : 5, 3 :5, 3: 5, 3 : 5, 3 : 5, 3 :5)
 
 for( i in 1 : length(fileNamesList)) {
-	geneExpressionData(sourceFile = fileNamesList[i], sampleTypes = unlist(sampleTypesList[i]), numOfClusters = numOfClustersList[i], states = unlist(statesList[i]))
+	result =	geneExpressionData(sourceFile = fileNamesList[i], sampleTypes = unlist(sampleTypesList[i]), numOfClusters = numOfClustersList[i], states = unlist(statesList[i]))
+	write.csv(file = file.path("./processedData/discretizations", paste(c(fileNamesList[i], ".csv"), collapse = "") ), result)
 }
 
 
- # geneExpressionData(sourceFile = fileNamesList[3], sampleTypes = unlist(sampleTypesList[3]), numOfClusters = numOfClustersList[3], states = unlist(statesList[6]))
