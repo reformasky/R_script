@@ -6,8 +6,7 @@ library(gridExtra)
 library(gplots)
 #extract the sample information from header file (currently only good for genome portal data): for non-samples(i.e.,
 # GeneId, and other statistic results) return -1; for pValues, return 0;
-processHeader = function(str, sampleTypes) {
-	
+processHeader = function(str, sampleTypes) {	
 	stringVec = unlist(strsplit(str, split = ".", fixed = TRUE));
 	if (length(stringVec) >= 2){
 		if(stringVec[1] %in% sampleTypes)

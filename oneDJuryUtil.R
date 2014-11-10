@@ -205,6 +205,20 @@ plotOneDJuryBar = function(fileName, dataBase = "./processedData/oneDJury", plot
 	dev.off()
 }
 
+
+selectForTop = function(sData, numOfGpsKept) {
+	labels= rownames(sData)
+
+	pValues = replicate(dim(sData)[2], 0)
+	for(i in 1 : dim(sData)[2]) {
+		pValues[i] = oneway.test(sData[,i] ~labels)$p.value
+	}
+
+	r = rank(pValues)
+	indexes = r > (dim(sData)[2] - numOfGpsKept)
+	sData[, indexes]
+}
+
 # }
 
 # evaluateOneDJury = function(sourceData, trueLabel, geneIndexs, numOfClusters, numOfState, fileName){

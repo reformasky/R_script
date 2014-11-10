@@ -32,24 +32,30 @@ for(i in 1 : 3){
 
 plotBase = "./plots/discretizations"
 euclidean = euclidean[, result]
-hamming = hamming[,result]	
-tiff(file.path(plotBase,"combined.tiff"), units="in", width=8, height=6, res=300)
-par(mfrow  = c(2, 1), mar = c(2,5,1,1))
-euclideanMeans = apply(euclidean, MARGIN = 2, mean)
-euclideanSDs = apply(euclidean, MARGIN = 2, sd)
-hammingMeans = apply(hamming, MARGIN = 2, mean)
-hammingSDs = apply(hamming, MARGIN = 2, sd)
+hamming = hamming[,result]
 
-euclideanMeans = cbind(euclideanMeans[1:3], euclideanMeans[4:6], euclideanMeans[7:9])
-euclideanSDs = cbind(euclideanSDs[1:3], euclideanSDs[4:6], euclideanSDs[7:9])
-hammingMeans = cbind(hammingMeans[1:3], hammingMeans[4:6], hammingMeans[7:9])
-hammingSDs = cbind(hammingSDs[1:3], hammingSDs[4:6], hammingSDs[7:9])
+tiff(file.path(plotBase,"combined_box.tiff"), units="in", width=8, height=6, res=300)
 
-ePlot = barplot(euclideanMeans, beside = T, col = c("red","green","blue"), ylim = c(0,2), xxaxt = "n")
-segments(ePlot, euclideanMeans, ePlot, euclideanMeans + euclideanSDs, lwd = 3)
-segments(ePlot - 0.1, euclideanMeans + euclideanSDs, ePlot + 0.1, euclideanMeans + euclideanSDs, lwd = 3)
 
-ePlot = barplot(hammingMeans, beside = T, col = c("red","green","blue"), ylim = c(0,2), xxaxt = "n")
-segments(ePlot, hammingMeans, ePlot, hammingMeans + hammingSDs, lwd = 3)
-segments(ePlot - 0.1, hammingMeans + hammingSDs, ePlot + 0.1, hammingMeans + hammingSDs, lwd = 3)
+par(mfcol  = c(1, 2), mar = c(2,5,1,1))
+
+boxplot(euclidean[,1:3])
+boxplot(hamming[,1:3])
+# euclideanMeans = apply(euclidean, MARGIN = 2, mean)
+# euclideanSDs = apply(euclidean, MARGIN = 2, sd)
+# hammingMeans = apply(hamming, MARGIN = 2, mean)
+# hammingSDs = apply(hamming, MARGIN = 2, sd)
+
+# euclideanMeans = cbind(euclideanMeans[1:3], euclideanMeans[4:6], euclideanMeans[7:9])
+# euclideanSDs = cbind(euclideanSDs[1:3], euclideanSDs[4:6], euclideanSDs[7:9])
+# hammingMeans = cbind(hammingMeans[1:3], hammingMeans[4:6], hammingMeans[7:9])
+# hammingSDs = cbind(hammingSDs[1:3], hammingSDs[4:6], hammingSDs[7:9])
+
+# ePlot = barplot(euclideanMeans, beside = T, col = c("red","green","blue"), ylim = c(0,2), xxaxt = "n")
+# segments(ePlot, euclideanMeans, ePlot, euclideanMeans + euclideanSDs, lwd = 3)
+# segments(ePlot - 0.1, euclideanMeans + euclideanSDs, ePlot + 0.1, euclideanMeans + euclideanSDs, lwd = 3)
+
+# ePlot = barplot(hammingMeans, beside = T, col = c("red","green","blue"), ylim = c(0,2), xxaxt = "n")
+# segments(ePlot, hammingMeans, ePlot, hammingMeans + hammingSDs, lwd = 3)
+# segments(ePlot - 0.1, hammingMeans + hammingSDs, ePlot + 0.1, hammingMeans + hammingSDs, lwd = 3)
 dev.off()

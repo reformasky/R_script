@@ -8,15 +8,15 @@ load(file="combinedMatrix")
 #### to select 50 sample from each group, remove comments
 ####
 
-colname = as.numeric(colnames(combinedMatrix))
-sampleSize = c(66, 392 + 66, 66+392+158, 66+392+158+ 246)
-cummulated = c(0,66,66 + 392, 66+392+158) + 1
-selected = c()
-for(i in 1 : 4) {
-	selected = c(selected, sample(cummulated[i]:sampleSize[i], size =50))
-}
-combinedMatrix = combinedMatrix[,selected]
-colnames(combinedMatrix) = colname[selected]
+# colname = as.numeric(colnames(combinedMatrix))
+# sampleSize = c(66, 392 + 66, 66+392+158, 66+392+158+ 246)
+# cummulated = c(0,66,66 + 392, 66+392+158) + 1
+# selected = c()
+# for(i in 1 : 4) {
+# 	selected = c(selected, sample(cummulated[i]:sampleSize[i], size =50))
+# }
+# combinedMatrix = combinedMatrix[,selected]
+# colnames(combinedMatrix) = colname[selected]
 
 numOfClusters = 4
 
